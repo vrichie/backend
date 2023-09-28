@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Complete Prisma schema for an e-commerce site
+
+// User model representing customers who can place orders
+model User {
+  id        Int         @id @default(autoincrement())
+  username  String      @unique
+  email     String      @unique
+  password  String
+  firstName String
+  lastName  String
+  addresses Address[] // A user can have multiple addresses
+  orders    Order[] // A user can have multiple orders
+  cartItems CartItem[]
+  favorites Favorite[]
+  Review    Review[]
+  UserOrder UserOrder[]
+  Product   Product[]
+}
+
+// Product model representing products available for sale
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  category    Category    @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  favorites   Favorite[]
+  orderItems  OrderItem[]
+  reviews     Review[] // A product can have multiple reviews
+  CartItem    CartItem[]
+  User        User?       @relation(fields: [userId], references: [id])
+  userId      Int?
+}
+
+// Category model for categorizing products
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  products    Product[]
+}
+
+// Order model representing customer orders
+model Order {
+  id          Int         @id @default(autoincrement())
+  orderNumber String      @unique
+  orderDate   DateTime    @default(now())
+  status      String // Enum: 'Pending', 'Processing', 'Shipped', 'Delivered', etc.
+  totalAmount Float
+  user        User        @relation(fields: [userId], references: [id])
+  userId      Int
+  orderItems  OrderItem[]
+}
+
+// OrderItem model representing individual items in an order
+model OrderItem {
+  id          Int        @id @default(autoincrement())
+  quantity    Int
+  totalPrice  Float
+  product     Product    @relation(fields: [productId], references: [id])
+  productId   Int
+  order       Order      @relation(fields: [orderId], references: [id])
+  orderId     Int
+  UserOrder   UserOrder? @relation(fields: [userOrderId], references: [id])
+  userOrderId Int?
+}
+
+// CartItem model representing items in a user's shopping cart
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+}
+
+// Review model representing product reviews by users
+model Review {
+  id        Int      @id @default(autoincrement())
+  text      String
+  rating    Float
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+}
+
+// Address model representing user addresses
+model Address {
+  id         Int    @id @default(autoincrement())
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String
+  user       User   @relation(fields: [userId], references: [id])
+  userId     Int
+}
+
+// UserOrder model representing user order history
+model UserOrder {
+  id          Int         @id @default(autoincrement())
+  orderDate   DateTime
+  totalAmount Float
+  user        User        @relation(fields: [userId], references: [id])
+  userId      Int
+  orderItems  OrderItem[]
+}
+
+model Favorite {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+
+  @@unique([userId, productId])
+}
